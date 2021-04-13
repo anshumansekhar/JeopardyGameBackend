@@ -170,7 +170,7 @@ io.on('connection', function (socket) {
                 Sports: SportsQuestions,
                 Editorial: EditorialQuestions,
                 Films: FilmsQuestions,
-                count: 1
+                count: 20
             }
         }
         // add the new game object created to games array
@@ -216,7 +216,7 @@ io.on('connection', function (socket) {
         // calculated players left to join
         const playersLeft = games[roomName].numPlayers - roomSize;
         // send playerJoined event to all the players in the room
-        io.to(roomName).emit('playerJoined', `waiting for ${playersLeft} players to join`);
+        io.to(roomName).emit('playerJoined', `waiting for ${playersLeft} players to join`,player);
         // send userDetails event to the player who joined the room along with the player object
         io.to(socket.id).emit("userDetails", player);
 
