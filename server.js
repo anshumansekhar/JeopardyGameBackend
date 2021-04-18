@@ -86,8 +86,8 @@ io.on('connection', function (socket) {
             console.log("Database Connected");
             var BusinessSql = "SELECT headline_id,headline FROM Buisness ORDER BY RAND() LIMIT 5";
             var EditorialSql = "SELECT ed_id,heading,keywords FROM Editorial ORDER BY RAND() LIMIT 5";
-            var sportsSql = "SELECT id,headline FROM sports ORDER BY RAND() LIMIT 5";
-            var trailerSql = "SELECT id,title,CONCAT(genre, ',',language,',',director,',',release_date) as answer FROM trailer ORDER BY RAND() LIMIT 5";
+            var sportsSql = "SELECT id,headline,game_type FROM sports ORDER BY RAND() LIMIT 5";
+            var trailerSql = "SELECT id,title,CONCAT(genre, ',',language,',',director) as answer FROM trailer ORDER BY RAND() LIMIT 5";
             connection.query(BusinessSql, function (err, result, fields) {
                 if (err) throw err;
                 result.map((row) => {
