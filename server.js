@@ -21,6 +21,17 @@ const cors = require('cors')
 const httpModule = require('http');
 // socket.io to allow websocket communication
 const socketModule = require('socket.io');
+// mysql to connect with database
+const mysql = require('mysql');
+
+const db_con = mysql.createPool({
+    connectionLimit: 5,
+    host: "remotemysql.com",
+    user: "6WoE4V4QkY",
+    password: "sSNgZI8YQz",
+    database: "6WoE4V4QkY"
+});
+
 
 
 // config enviroment
@@ -50,94 +61,11 @@ let games = {};
 // TODO get question from database
 
 // test questions
-let BusinessQuestions = [
-    {
-        Headline: "Test Buiness Headline",
-        Answer: "Test"
-    },
-    {
-        Headline: "Test Buiness Headline",
-        Answer: "Test"
-    },
-    {
-        Headline: "Test Buiness Headline",
-        Answer: "Test"
-    },
-    {
-        Headline: "Test Buiness Headline",
-        Answer: "Test"
-    },
-    {
-        Headline: "Test Buiness Headline",
-        Answer: "Test"
-    }
-]
-let EditorialQuestions = [
-    {
-        Headline: "Test Buiness Headline",
-        Answer: "Test"
-    },
-    {
-        Headline: "Test Buiness Headline",
-        Answer: "Test"
-    },
-    {
-        Headline: "Test Buiness Headline",
-        Answer: "Test"
-    },
-    {
-        Headline: "Test Buiness Headline",
-        Answer: "Test"
-    },
-    {
-        Headline: "Test Buiness Headline",
-        Answer: "Test"
-    }
-]
-let SportsQuestions = [
-    {
-        Headline: "Test Buiness Headline",
-        Answer: "Test"
-    },
-    {
-        Headline: "Test Buiness Headline",
-        Answer: "Test"
-    },
-    {
-        Headline: "Test Buiness Headline",
-        Answer: "Test"
-    },
-    {
-        Headline: "Test Buiness Headline",
-        Answer: "Test"
-    },
-    {
-        Headline: "Test Buiness Headline",
-        Answer: "Test"
-    }
-]
-let FilmsQuestions = [
-    {
-        Headline: "Test Buiness Headline",
-        Answer: "Test"
-    },
-    {
-        Headline: "Test Buiness Headline",
-        Answer: "Test"
-    },
-    {
-        Headline: "Test Buiness Headline",
-        Answer: "Test"
-    },
-    {
-        Headline: "Test Buiness Headline",
-        Answer: "Test"
-    },
-    {
-        Headline: "Test Buiness Headline",
-        Answer: "Test"
-    }
-]
+let BusinessQuestions = []
+let EditorialQuestions = []
+let SportsQuestions = []
+let FilmsQuestions = []
+
 
 // when a socket connection request is recievec from a client 
 io.on('connection', function (socket) {
@@ -153,6 +81,51 @@ io.on('connection', function (socket) {
             playerName: game.playerName,
             playerScore: 0
         }
+        db_con.getConnection(function (err, connection) {
+            if (err) throw err;
+            console.log("Database Connected");
+            var BusinessSql = "SELECT headline_id,headline FROM Buisness ORDER BY RAND() LIMIT 5";
+            var EditorialSql = "SELECT ed_id,heading,keywords FROM Editorial ORDER BY RAND() LIMIT 5";
+            var sportsSql = "SELECT id,headline FROM sports ORDER BY RAND() LIMIT 5";
+            var trailerSql = "SELECT id,title,CONCAT(genre, ',',language,',',director,',',release_date) as answer FROM trailer ORDER BY RAND() LIMIT 5";
+            connection.query(BusinessSql, function (err, result, fields) {
+                if (err) throw err;
+                result.map((row) => {
+                    BusinessQuestions.push({
+                        Headline: row.headline,
+                        Answer: row.answer + ",Test"
+                    })
+                })
+            });
+            connection.query(EditorialSql, function (err, result, fields) {
+                if (err) throw err;
+                result.map((row) => {
+                    EditorialQuestions.push({
+                        Headline: row.heading,
+                        Answer: row.keywords + ",Test"
+                    })
+                })
+            });
+            connection.query(sportsSql, function (err, result, fields) {
+                if (err) throw err;
+                result.map((row) => {
+                    SportsQuestions.push({
+                        Headline: row.headline,
+                        Answer: row.game_type + ",Test"
+                    })
+                })
+            });
+            connection.query(trailerSql, function (err, result, fields) {
+                if (err) throw err;
+                result.map((row) => {
+                    FilmsQuestions.push({
+                        Headline: row.title,
+                        Answer: row.answer + ",Test"
+                    })
+                })
+            });
+            connection.release();
+        });
         // form a game object to push to games array
         // game object contains
         // createdBy,num of players,players array,currentplayerindex
@@ -195,42 +168,47 @@ io.on('connection', function (socket) {
     socket.on('joinGame', (joinReq) => {
         // get the room name from request
 
-        // TODO check if room exists
+        // check if room exists
         const roomName = joinReq.roomName;
-        // form the player object
-        const player = {
-            socketId: socket.id,
-            playerName: joinReq.playerName,
-            playerScore: 0
+        if (games[roomName] === undefined) {
+            io.to(socket.id).emit("joinGameFailed", `Invalid Room Code ${roomName}`);
         }
-        // push the player object to the list of players
-        // in the game room provided
-        games[roomName].players.push(player);
-        // join the room
-        socket.join(roomName);
+        else {
+            // form the player object
+            const player = {
+                socketId: socket.id,
+                playerName: joinReq.playerName,
+                playerScore: 0
+            }
+            // push the player object to the list of players
+            // in the game room provided
+            games[roomName].players.push(player);
+            // join the room
+            socket.join(roomName);
 
-        // get all rooms present in server
-        const rooms = io.of("/").adapter.rooms;
-        // get the provided room size
-        const roomSize = rooms.get(roomName).size;
-        // calculated players left to join
-        const playersLeft = games[roomName].numPlayers - roomSize;
-        // send playerJoined event to all the players in the room
-        io.to(roomName).emit('playerJoined', `waiting for ${playersLeft} players to join`,player);
-        // send userDetails event to the player who joined the room along with the player object
-        io.to(socket.id).emit("userDetails", player);
+            // get all rooms present in server
+            const rooms = io.of("/").adapter.rooms;
+            // get the provided room size
+            const roomSize = rooms.get(roomName).size;
+            // calculated players left to join
+            const playersLeft = games[roomName].numPlayers - roomSize;
+            // send playerJoined event to all the players in the room
+            io.to(roomName).emit('playerJoined', `waiting for ${playersLeft} players to join`, player, games[roomName].players);
+            // send userDetails event to the player who joined the room along with the player object
+            io.to(socket.id).emit("userDetails", player);
 
-        // when there are no players left to join
-        if (playersLeft === 0) {
-            // send startGame event to all the players in the room
-            io.to(roomName).emit('startGame', "Starting Game!!");
-            // get the player whose turn it is
-            const playerTurn = games[roomName].players[games[roomName].currentPlayerIndex];
-            // send takeTurn event to all the players in the room
-            // pass the player object of the player whose turn it is
-            io.to(roomName).emit('takeTurn',
-                `${playerTurn.playerName} 's turn`,
-                playerTurn)
+            // when there are no players left to join
+            if (playersLeft === 0) {
+                // send startGame event to all the players in the room
+                io.to(roomName).emit('startGame', "Starting Game!!");
+                // get the player whose turn it is
+                const playerTurn = games[roomName].players[games[roomName].currentPlayerIndex];
+                // send takeTurn event to all the players in the room
+                // pass the player object of the player whose turn it is
+                io.to(roomName).emit('takeTurn',
+                    `${playerTurn.playerName} 's turn`,
+                    playerTurn)
+            }
         }
     })
 
@@ -275,7 +253,7 @@ io.on('connection', function (socket) {
 
         // check answer
         // if answer matched
-        if (questionInServer.Answer === req.answer) {
+        if (questionInServer.Answer.includes(req.answer)) {
             // increase player score by the question amount
             currPlayer.playerScore += questionInReqAmount;
         }
@@ -314,7 +292,8 @@ io.on('connection', function (socket) {
             // send EndGame event to all the players in the game room along with the score board created
             io.to(gameRoom.roomName).emit("EndGame", "Game Ended", scoreBoard);
 
-            // TODO delete the game room
+            // delete the game room
+            delete games[req.roomName];
         }
 
     })
