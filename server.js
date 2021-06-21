@@ -84,7 +84,7 @@ io.on('connection', function (socket) {
         db_con.getConnection(function (err, connection) {
             if (err) throw err;
             console.log("Database Connected");
-            var BusinessSql = "SELECT headline_id,headline FROM Buisness ORDER BY RAND() LIMIT 5";
+            var BusinessSql = "SELECT headline_id,headline,answer FROM Buisness ORDER BY RAND() LIMIT 5";
             var EditorialSql = "SELECT ed_id,heading,keywords FROM Editorial ORDER BY RAND() LIMIT 5";
             var sportsSql = "SELECT id,headline,game_type FROM sports ORDER BY RAND() LIMIT 5";
             var trailerSql = "SELECT id,title,CONCAT(genre, ',',language,',',director) as answer FROM trailer ORDER BY RAND() LIMIT 5";
@@ -253,7 +253,7 @@ io.on('connection', function (socket) {
 
         // check answer
         // if answer matched
-        if (questionInServer.Answer.includes(req.answer)) {
+        if (questionInServer.Answer.toLowerCase().includes(req.answer.toLowerCase())) {
             // increase player score by the question amount
             currPlayer.playerScore += questionInReqAmount;
         }
