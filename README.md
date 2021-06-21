@@ -66,7 +66,7 @@ for sports answer is the game_type and for trailer any one among  movie genre, d
 
 ### Database table's structure
 ![Alt](/editorial.png)
-![Alt](/business.png)
+![Alt](/business)
 ![Alt](/sports.png)
 ![Alt](/trailer.png)
 
