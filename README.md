@@ -65,8 +65,8 @@ For generating answers Business and Editorial database have keywords that are th
 for sports answer is the game_type and for trailer any one among  movie genre, director name and language is the answer.
 
 ### Database table's structure
-/editorial.png
-/business.png
-/sports.png
-/trailer.png
+![Alt](/editorial.png)
+![Alt](/business.png)
+![Alt](/sports.png)
+![Alt](/trailer.png)
 
